@@ -19,6 +19,10 @@
             overflow: hidden;
         }
         canvas {
+            /* Scale to fill the window while keeping the 800x500 (16:10) aspect ratio */
+            width: min(calc(100vw - 20px), calc((100vh - 20px) * 1.6));
+            height: auto;
+            aspect-ratio: 16 / 10;
             border: 2px solid #e94560;
             background: #16213e;
             image-rendering: pixelated;
