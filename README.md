@@ -77,18 +77,39 @@ Press **ESC** during a match to open the pause menu.
    ```
 3. Open `http://localhost:8080` in your browser.
 
+## AI Opponent
+
+The computer player lives in `ai.js` and plays by the same rules as a human: it only presses keys, so facing follows movement, shots have a cooldown, ammo runs out and inverted controls hit it too. It never gets extra speed or information.
+
+How it works:
+
+- **Navigation** - platforms are nodes of a graph, and every edge is a jump or drop that was simulated frame by frame with the real physics (including moving platforms and bounce pads). Routes are planned with Dijkstra, so the bot only attempts jumps it can actually land - on every map, in every mode.
+- **Aiming** - bullets fly horizontally, so the bot knows exactly when a shot can hit. It aims with a difficulty-dependent error and perception lag, leads jumping targets (Hard), never fires backwards while retreating, and stops shooting at a shielded enemy (Medium/Hard).
+- **Dodging** - it notices incoming bullets with a reaction delay and only reacts to bullets that would really hit. When there is time it drops through its platform (and is out of the line of fire for good), otherwise it jumps - but not endlessly.
+- **One brain per mode** - Classic/One Shot: pick a shooting position on the enemy's height, weigh power-ups and ammo against the fight, back off or jump over a cornering enemy. King of the Hill: route to the hill, trade shots instead of jumping out of the zone, fetch ammo only when it doesn't cost the hill. Tag: as the tagger, chase and shoot (a hit passes the tag); as the runner, pick the platform the tagger needs longest to reach and get out of its line of fire. Lava Rise: a look-ahead jump planner that keeps the bot on screen, avoids dead ends and uses double jumps, swaps and platform charges in emergencies.
+
+| Difficulty | Reaction | Aim error | Dodges | Fire rate | Special |
+|------------|----------|-----------|--------|-----------|---------|
+| Easy | ~270 ms | large | rarely | 600 ms | hesitates, grabs whatever power-up is close |
+| Medium | ~120 ms | medium | half of the time | 450 ms | stop-and-shoot, adapts to inverted controls after 2.5 s |
+| Hard | ~50 ms | small | almost always | 300 ms | leads jumping targets, deeper route planning, uses items |
+
 ## AI Simulation
 
-`ai-sim.js` is a standalone Node.js script that pits different AI models against each other in a simplified Classic-mode simulation:
+`ai-sim.js` runs the **real game** headless in Node (no browser needed) and lets two computer players play against each other, so the numbers say something about the AI people actually play against:
 
 ```bash
-node ai-sim.js
+node ai-sim.js                                   # difficulty ladder in every mode
+node ai-sim.js --mode classic --games 100 --p1 easy --p2 hard
+node ai-sim.js --mode lava --games 30 --ammo infinite
 ```
+
+Options: `--mode classic|oneshot|koth|tag|lava|all`, `--games N`, `--p1/--p2 easy|medium|hard`, `--map`, `--ammo limited|infinite`, `--seed`, `--verbose`.
 
 ## Tech Stack
 
 - HTML5 Canvas (800x500, scaled to the window)
-- Vanilla JavaScript (~8000 lines)
+- Vanilla JavaScript (`game.js` ~6500 lines, `ai.js` ~1500 lines)
 - No external dependencies
 
 ## License
